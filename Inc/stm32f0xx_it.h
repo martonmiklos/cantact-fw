@@ -1,11 +1,10 @@
 /**
   ******************************************************************************
   * @file    stm32f0xx_it.h
-  * @date    05/12/2014 20:22:27
   * @brief   This file contains the headers of the interrupt handlers.
   ******************************************************************************
   *
-  * COPYRIGHT(c) 2014 STMicroelectronics
+  * COPYRIGHT(c) 2018 STMicroelectronics
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -41,13 +40,15 @@
 #endif 
 
 /* Includes ------------------------------------------------------------------*/
+#include "stm32f0xx_hal.h"
+#include "main.h"
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 
-void USB_IRQHandler(void);
 void SysTick_Handler(void);
+void USB_IRQHandler(void);
 
 #ifdef __cplusplus
 }

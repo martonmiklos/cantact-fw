@@ -2,9 +2,7 @@
   ******************************************************************************
   * @file      startup_stm32f042x6.s
   * @author    MCD Application Team
-  * @version   V2.1.0
-  * @date      03-Oct-2014
-  * @brief     STM32F042x4/STM32F042x6 devices vector table for Atollic TrueSTUDIO toolchain.
+  * @brief     STM32F042x4/STM32F042x6 devices vector table for GCC toolchain.
   *            This module performs:
   *                - Set the initial SP
   *                - Set the initial PC == Reset_Handler,
@@ -60,6 +58,15 @@ defined in linker script */
 /* end address for the .bss section. defined in linker script */
 .word _ebss
 
+/**
+ * @brief  This is the code that gets called when the processor first
+ *          starts execution following a reset event. Only the absolutely
+ *          necessary set is performed, after which the application
+ *          supplied main() routine is called.
+ * @param  None
+ * @retval : None
+*/
+
   .section .text.Reset_Handler
   .weak Reset_Handler
   .type Reset_Handler, %function
@@ -67,34 +74,56 @@ Reset_Handler:
   ldr   r0, =_estack
   mov   sp, r0          /* set stack pointer */
 
+/*Check if boot space corresponds to test memory*/
+ 
+    LDR R0,=0x00000004
+    LDR R1, [R0]
+    LSRS R1, R1, #24
+    LDR R2,=0x1F
+    CMP R1, R2
+    BNE ApplicationStart
+
+ /*SYSCFG clock enable*/
+
+    LDR R0,=0x40021018
+    LDR R1,=0x00000001
+    STR R1, [R0]
+
+/*Set CFGR1 register with flash memory remap at address 0*/
+    LDR R0,=0x40010000
+    LDR R1,=0x00000000
+    STR R1, [R0]
+
+ApplicationStart:
 /* Copy the data segment initializers from flash to SRAM */
-  movs r1, #0
+  ldr r0, =_sdata
+  ldr r1, =_edata
+  ldr r2, =_sidata
+  movs r3, #0
   b LoopCopyDataInit
 
 CopyDataInit:
-  ldr r3, =_sidata
-  ldr r3, [r3, r1]
-  str r3, [r0, r1]
-  adds r1, r1, #4
+  ldr r4, [r2, r3]
+  str r4, [r0, r3]
+  adds r3, r3, #4
 
 LoopCopyDataInit:
-  ldr r0, =_sdata
-  ldr r3, =_edata
-  adds r2, r0, r1
-  cmp r2, r3
+  adds r4, r0, r3
+  cmp r4, r1
   bcc CopyDataInit
-  ldr r2, =_sbss
-  b LoopFillZerobss
+  
 /* Zero fill the bss segment. */
-FillZerobss:
+  ldr r2, =_sbss
+  ldr r4, =_ebss
   movs r3, #0
+  b LoopFillZerobss
+
+FillZerobss:
   str  r3, [r2]
   adds r2, r2, #4
 
-
 LoopFillZerobss:
-  ldr r3, = _ebss
-  cmp r2, r3
+  cmp r2, r4
   bcc FillZerobss
 
 /* Call the clock system intitialization function.*/

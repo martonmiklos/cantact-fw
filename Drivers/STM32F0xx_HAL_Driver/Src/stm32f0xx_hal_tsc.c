@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f0xx_hal_tsc.c
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    03-Oct-2014
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the Touch Sensing Controller (TSC) peripheral:
   *           + Initialization and DeInitialization
@@ -17,40 +15,38 @@
                        ##### TSC specific features #####
 ================================================================================
   [..]
-  (#) Proven and robust surface charge transfer acquisition principle
-    
-  (#) Supports up to 3 capacitive sensing channels per group
-    
-  (#) Capacitive sensing channels can be acquired in parallel offering a very good
-      response time
-      
-  (#) Spread spectrum feature to improve system robustness in noisy environments
-   
-  (#) Full hardware management of the charge transfer acquisition sequence
-   
-  (#) Programmable charge transfer frequency
-   
-  (#) Programmable sampling capacitor I/O pin
-   
-  (#) Programmable channel I/O pin
-   
-  (#) Programmable max count value to avoid long acquisition when a channel is faulty
-   
-  (#) Dedicated end of acquisition and max count error flags with interrupt capability
-   
-  (#) One sampling capacitor for up to 3 capacitive sensing channels to reduce the system
-      components
-   
-  (#) Compatible with proximity, touchkey, linear and rotary touch sensor implementation
+      (+)  Proven and robust surface charge transfer acquisition principle
 
-   
+      (+)  Supports up to 3 capacitive sensing channels per group
+
+      (+)  Capacitive sensing channels can be acquired in parallel offering a very good
+           response time
+
+      (+)  Spread spectrum feature to improve system robustness in noisy environments
+
+      (+)  Full hardware management of the charge transfer acquisition sequence
+
+      (+)  Programmable charge transfer frequency
+
+      (+)  Programmable sampling capacitor I/O pin
+
+      (+)  Programmable channel I/O pin
+
+      (+)  Programmable max count value to avoid long acquisition when a channel is faulty
+
+      (+)  Dedicated end of acquisition and max count error flags with interrupt capability
+
+      (+)  One sampling capacitor for up to 3 capacitive sensing channels to reduce the system
+           components
+      (+)  Compatible with proximity, touchkey, linear and rotary touch sensor implementation
+
                           ##### How to use this driver #####
 ================================================================================
   [..]
-    (#) Enable the TSC interface clock using __TSC_CLK_ENABLE() macro.
+    (#) Enable the TSC interface clock using __HAL_RCC_TSC_CLK_ENABLE() macro.
 
     (#) GPIO pins configuration
-      (++) Enable the clock for the TSC GPIOs using __GPIOx_CLK_ENABLE() macro.
+      (++) Enable the clock for the TSC GPIOs using __HAL_RCC_GPIOx_CLK_ENABLE() macro.
       (++) Configure the TSC pins used as sampling IOs in alternate function output Open-Drain mode,
            and TSC pins used as channel/shield IOs in alternate function output Push-Pull mode
            using HAL_GPIO_Init() function.
@@ -81,7 +77,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2014 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -111,20 +107,20 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx_hal.h"
 
-/** @addtogroup STM32F0xx_HAL_Driver
-  * @{
-  */
-
-/** @defgroup TSC TSC HAL module driver
-  * @brief TSC HAL module driver
-  * @{
-  */
-
 #ifdef HAL_TSC_MODULE_ENABLED
 
 #if defined(STM32F051x8) || defined(STM32F071xB) || defined(STM32F091xC) || \
     defined(STM32F042x6) || defined(STM32F072xB) ||                         \
     defined(STM32F048xx) || defined(STM32F058xx) || defined(STM32F078xx) || defined(STM32F098xx)
+
+/** @addtogroup STM32F0xx_HAL_Driver
+  * @{
+  */
+
+/** @defgroup TSC TSC
+  * @brief TSC HAL module driver
+  * @{
+  */
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -155,7 +151,7 @@ static uint32_t TSC_extract_groups(uint32_t iomask);
 /**
   * @brief  Initializes the TSC peripheral according to the specified parameters 
   *         in the TSC_InitTypeDef structure.           
-  * @param  htsc: TSC handle
+  * @param  htsc TSC handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_TSC_Init(TSC_HandleTypeDef* htsc)
@@ -179,7 +175,13 @@ HAL_StatusTypeDef HAL_TSC_Init(TSC_HandleTypeDef* htsc)
   assert_param(IS_TSC_SYNC_POL(htsc->Init.SynchroPinPolarity));
   assert_param(IS_TSC_ACQ_MODE(htsc->Init.AcquisitionMode));
   assert_param(IS_TSC_MCE_IT(htsc->Init.MaxCountInterrupt));
-    
+
+  if(htsc->State == HAL_TSC_STATE_RESET)
+  {
+    /* Allocate lock resource and initialize it */
+    htsc->Lock = HAL_UNLOCKED;
+  }    
+
   /* Initialize the TSC state */
   htsc->State = HAL_TSC_STATE_BUSY;
 
@@ -195,11 +197,10 @@ HAL_StatusTypeDef HAL_TSC_Init(TSC_HandleTypeDef* htsc)
   /* Set all functions */
   htsc->Instance->CR |= (htsc->Init.CTPulseHighLength |
                          htsc->Init.CTPulseLowLength |
-                         (uint32_t)(htsc->Init.SpreadSpectrumDeviation << 17) |
+                         (uint32_t)(htsc->Init.SpreadSpectrumDeviation << 17U) |
                          htsc->Init.SpreadSpectrumPrescaler |
                          htsc->Init.PulseGeneratorPrescaler |
                          htsc->Init.MaxCountValue |
-                         htsc->Init.IODefaultMode |
                          htsc->Init.SynchroPinPolarity |
                          htsc->Init.AcquisitionMode);
 
@@ -238,7 +239,7 @@ HAL_StatusTypeDef HAL_TSC_Init(TSC_HandleTypeDef* htsc)
 
 /**
   * @brief  Deinitializes the TSC peripheral registers to their default reset values.
-  * @param  htsc: TSC handle  
+  * @param  htsc TSC handle  
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_TSC_DeInit(TSC_HandleTypeDef* htsc)
@@ -270,12 +271,15 @@ HAL_StatusTypeDef HAL_TSC_DeInit(TSC_HandleTypeDef* htsc)
 
 /**
   * @brief  Initializes the TSC MSP.
-  * @param  htsc: pointer to a TSC_HandleTypeDef structure that contains
+  * @param  htsc pointer to a TSC_HandleTypeDef structure that contains
   *         the configuration information for the specified TSC.  
   * @retval None
   */
 __weak void HAL_TSC_MspInit(TSC_HandleTypeDef* htsc)
 {
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(htsc);
+
   /* NOTE : This function should not be modified, when the callback is needed,
             the HAL_TSC_MspInit could be implemented in the user file.
    */ 
@@ -283,12 +287,15 @@ __weak void HAL_TSC_MspInit(TSC_HandleTypeDef* htsc)
 
 /**
   * @brief  DeInitializes the TSC MSP.
-  * @param  htsc: pointer to a TSC_HandleTypeDef structure that contains
+  * @param  htsc pointer to a TSC_HandleTypeDef structure that contains
   *         the configuration information for the specified TSC.  
   * @retval None
   */
 __weak void HAL_TSC_MspDeInit(TSC_HandleTypeDef* htsc)
 {
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(htsc);
+
   /* NOTE : This function should not be modified, when the callback is needed,
             the HAL_TSC_MspDeInit could be implemented in the user file.
    */ 
@@ -318,7 +325,7 @@ __weak void HAL_TSC_MspDeInit(TSC_HandleTypeDef* htsc)
 
 /**
   * @brief  Starts the acquisition.
-  * @param  htsc: pointer to a TSC_HandleTypeDef structure that contains
+  * @param  htsc pointer to a TSC_HandleTypeDef structure that contains
   *         the configuration information for the specified TSC.
   * @retval HAL status
   */
@@ -339,8 +346,15 @@ HAL_StatusTypeDef HAL_TSC_Start(TSC_HandleTypeDef* htsc)
   /* Clear flags */
   __HAL_TSC_CLEAR_FLAG(htsc, (TSC_FLAG_EOA | TSC_FLAG_MCE));
 
-  /* Stop discharging the IOs */
-  __HAL_TSC_SET_IODEF_INFLOAT(htsc);
+  /* Set touch sensing IOs not acquired to the specified IODefaultMode */
+  if (htsc->Init.IODefaultMode == TSC_IODEF_OUT_PP_LOW)
+  {
+    __HAL_TSC_SET_IODEF_OUTPPLOW(htsc);
+  }
+  else
+  {
+    __HAL_TSC_SET_IODEF_INFLOAT(htsc);
+  }
   
   /* Launch the acquisition */
   __HAL_TSC_START_ACQ(htsc);
@@ -354,7 +368,7 @@ HAL_StatusTypeDef HAL_TSC_Start(TSC_HandleTypeDef* htsc)
 
 /**
   * @brief  Enables the interrupt and starts the acquisition
-  * @param  htsc: pointer to a TSC_HandleTypeDef structure that contains
+  * @param  htsc pointer to a TSC_HandleTypeDef structure that contains
   *         the configuration information for the specified TSC.
   * @retval HAL status.
   */
@@ -386,8 +400,15 @@ HAL_StatusTypeDef HAL_TSC_Start_IT(TSC_HandleTypeDef* htsc)
   /* Clear flags */
   __HAL_TSC_CLEAR_FLAG(htsc, (TSC_FLAG_EOA | TSC_FLAG_MCE));
   
-  /* Stop discharging the IOs */
-  __HAL_TSC_SET_IODEF_INFLOAT(htsc);
+  /* Set touch sensing IOs not acquired to the specified IODefaultMode */
+  if (htsc->Init.IODefaultMode == TSC_IODEF_OUT_PP_LOW)
+  {
+    __HAL_TSC_SET_IODEF_OUTPPLOW(htsc);
+  }
+  else
+  {
+    __HAL_TSC_SET_IODEF_INFLOAT(htsc);
+  }
   
   /* Launch the acquisition */
   __HAL_TSC_START_ACQ(htsc);
@@ -401,7 +422,7 @@ HAL_StatusTypeDef HAL_TSC_Start_IT(TSC_HandleTypeDef* htsc)
 
 /**
   * @brief  Stops the acquisition previously launched in polling mode
-  * @param  htsc: pointer to a TSC_HandleTypeDef structure that contains
+  * @param  htsc pointer to a TSC_HandleTypeDef structure that contains
   *         the configuration information for the specified TSC.
   * @retval HAL status
   */
@@ -416,6 +437,9 @@ HAL_StatusTypeDef HAL_TSC_Stop(TSC_HandleTypeDef* htsc)
   /* Stop the acquisition */
   __HAL_TSC_STOP_ACQ(htsc);
 
+  /* Set touch sensing IOs in low power mode (output push-pull) */
+  __HAL_TSC_SET_IODEF_OUTPPLOW(htsc);
+  
   /* Clear flags */
   __HAL_TSC_CLEAR_FLAG(htsc, (TSC_FLAG_EOA | TSC_FLAG_MCE));
   
@@ -431,7 +455,7 @@ HAL_StatusTypeDef HAL_TSC_Stop(TSC_HandleTypeDef* htsc)
 
 /**
   * @brief  Stops the acquisition previously launched in interrupt mode
-  * @param  htsc: pointer to a TSC_HandleTypeDef structure that contains
+  * @param  htsc pointer to a TSC_HandleTypeDef structure that contains
   *         the configuration information for the specified TSC.
   * @retval HAL status
   */
@@ -445,6 +469,9 @@ HAL_StatusTypeDef HAL_TSC_Stop_IT(TSC_HandleTypeDef* htsc)
   
   /* Stop the acquisition */
   __HAL_TSC_STOP_ACQ(htsc);
+  
+  /* Set touch sensing IOs in low power mode (output push-pull) */
+  __HAL_TSC_SET_IODEF_OUTPPLOW(htsc);
   
   /* Disable interrupts */
   __HAL_TSC_DISABLE_IT(htsc, (TSC_IT_EOA | TSC_IT_MCE));
@@ -464,9 +491,9 @@ HAL_StatusTypeDef HAL_TSC_Stop_IT(TSC_HandleTypeDef* htsc)
 
 /**
   * @brief  Gets the acquisition status for a group
-  * @param  htsc: pointer to a TSC_HandleTypeDef structure that contains
+  * @param  htsc pointer to a TSC_HandleTypeDef structure that contains
   *         the configuration information for the specified TSC.
-  * @param  gx_index: Index of the group
+  * @param  gx_index Index of the group
   * @retval Group status
   */
 TSC_GroupStatusTypeDef HAL_TSC_GroupGetStatus(TSC_HandleTypeDef* htsc, uint32_t gx_index)
@@ -481,9 +508,9 @@ TSC_GroupStatusTypeDef HAL_TSC_GroupGetStatus(TSC_HandleTypeDef* htsc, uint32_t 
 
 /**
   * @brief  Gets the acquisition measure for a group
-  * @param  htsc: pointer to a TSC_HandleTypeDef structure that contains
+  * @param  htsc pointer to a TSC_HandleTypeDef structure that contains
   *         the configuration information for the specified TSC.
-  * @param  gx_index: Index of the group
+  * @param  gx_index Index of the group
   * @retval Acquisition measure
   */
 uint32_t HAL_TSC_GroupGetValue(TSC_HandleTypeDef* htsc, uint32_t gx_index)
@@ -516,9 +543,9 @@ uint32_t HAL_TSC_GroupGetValue(TSC_HandleTypeDef* htsc, uint32_t gx_index)
 
 /**
   * @brief  Configures TSC IOs
-  * @param  htsc: pointer to a TSC_HandleTypeDef structure that contains
+  * @param  htsc pointer to a TSC_HandleTypeDef structure that contains
   *         the configuration information for the specified TSC.
-  * @param  config: pointer to the configuration structure.
+  * @param  config pointer to the configuration structure.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_TSC_IOConfig(TSC_HandleTypeDef* htsc, TSC_IOConfigTypeDef* config)
@@ -553,9 +580,9 @@ HAL_StatusTypeDef HAL_TSC_IOConfig(TSC_HandleTypeDef* htsc, TSC_IOConfigTypeDef*
 
 /**
   * @brief  Discharge TSC IOs
-  * @param  htsc: pointer to a TSC_HandleTypeDef structure that contains
+  * @param  htsc pointer to a TSC_HandleTypeDef structure that contains
   *         the configuration information for the specified TSC.
-  * @param  choice: enable or disable
+  * @param  choice enable or disable
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_TSC_IODischarge(TSC_HandleTypeDef* htsc, uint32_t choice)
@@ -605,7 +632,7 @@ HAL_StatusTypeDef HAL_TSC_IODischarge(TSC_HandleTypeDef* htsc, uint32_t choice)
 
 /**
   * @brief  Return the TSC state
-  * @param  htsc: pointer to a TSC_HandleTypeDef structure that contains
+  * @param  htsc pointer to a TSC_HandleTypeDef structure that contains
   *         the configuration information for the specified TSC.
   * @retval HAL state
   */
@@ -641,7 +668,7 @@ HAL_TSC_StateTypeDef HAL_TSC_GetState(TSC_HandleTypeDef* htsc)
   * @brief  Start acquisition and wait until completion
   * @note   There is no need of a timeout parameter as the max count error is already
   *         managed by the TSC peripheral.
-  * @param  htsc: pointer to a TSC_HandleTypeDef structure that contains
+  * @param  htsc pointer to a TSC_HandleTypeDef structure that contains
   *         the configuration information for the specified TSC.
   * @retval HAL state
   */
@@ -667,7 +694,7 @@ HAL_StatusTypeDef HAL_TSC_PollForAcquisition(TSC_HandleTypeDef* htsc)
 
 /**
   * @brief  Handles TSC interrupt request  
-  * @param  htsc: pointer to a TSC_HandleTypeDef structure that contains
+  * @param  htsc pointer to a TSC_HandleTypeDef structure that contains
   *         the configuration information for the specified TSC.
   * @retval None
   */
@@ -713,12 +740,15 @@ void HAL_TSC_IRQHandler(TSC_HandleTypeDef* htsc)
  
 /**
   * @brief  Acquisition completed callback in non blocking mode 
-  * @param  htsc: pointer to a TSC_HandleTypeDef structure that contains
+  * @param  htsc pointer to a TSC_HandleTypeDef structure that contains
   *         the configuration information for the specified TSC.
   * @retval None
   */
 __weak void HAL_TSC_ConvCpltCallback(TSC_HandleTypeDef* htsc)
 {
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(htsc);
+
   /* NOTE : This function should not be modified, when the callback is needed,
             the HAL_TSC_ConvCpltCallback could be implemented in the user file.
    */
@@ -726,12 +756,15 @@ __weak void HAL_TSC_ConvCpltCallback(TSC_HandleTypeDef* htsc)
 
 /**
   * @brief  Error callback in non blocking mode
-  * @param  htsc: pointer to a TSC_HandleTypeDef structure that contains
+  * @param  htsc pointer to a TSC_HandleTypeDef structure that contains
   *         the configuration information for the specified TSC.
   * @retval None
   */
 __weak void HAL_TSC_ErrorCallback(TSC_HandleTypeDef* htsc)
 {
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(htsc);
+
   /* NOTE : This function should not be modified, when the callback is needed,
             the HAL_TSC_ErrorCallback could be implemented in the user file.
    */
@@ -751,19 +784,19 @@ __weak void HAL_TSC_ErrorCallback(TSC_HandleTypeDef* htsc)
       
 /**
   * @brief  Utility function used to set the acquired groups mask
-  * @param  iomask: Channels IOs mask
+  * @param  iomask Channels IOs mask
   * @retval Acquired groups mask
   */
 static uint32_t TSC_extract_groups(uint32_t iomask)
 {
-  uint32_t groups = 0;
+  uint32_t groups = 0U;
   uint32_t idx;
   
-  for (idx = 0; idx < TSC_NB_OF_GROUPS; idx++)
+  for (idx = 0U; idx < TSC_NB_OF_GROUPS; idx++)
   {
-    if ((iomask & ((uint32_t)0x0F << (idx * 4))) != RESET)
+    if ((iomask & (0x0FU << (idx * 4U))) != RESET)
     {
-      groups |= ((uint32_t)1 << idx);
+      groups |= (1U << idx);
     }
   }
   
@@ -774,18 +807,18 @@ static uint32_t TSC_extract_groups(uint32_t iomask)
   * @}
   */
 
+/**
+  * @}
+  */ 
+
+/**
+  * @}
+  */ 
+
 #endif /* defined(STM32F051x8) || defined(STM32F071xB) || defined(STM32F091xC) || */
        /* defined(STM32F042x6) || defined(STM32F072xB) ||                         */
        /* defined(STM32F048xx) || defined(STM32F058xx) || defined(STM32F078xx) || defined(STM32F098xx) */
 
 #endif /* HAL_TSC_MODULE_ENABLED */
-
-/**
-  * @}
-  */ 
-
-/**
-  * @}
-  */ 
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

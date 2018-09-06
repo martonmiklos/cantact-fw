@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f0xx_hal_crc_ex.c
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    03-Oct-2014
   * @brief   Extended CRC HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the CRC peripheral:
@@ -11,9 +9,6 @@
   *         
   @verbatim
 ================================================================================
-          ##### Product specific features  #####
-================================================================================
-   
             ##### How to use this driver #####
 ================================================================================
     [..]
@@ -25,7 +20,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2014 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -59,7 +54,7 @@
   * @{
   */
 
-/** @defgroup CRCEx CRCEx Extended HAL Module Driver 
+/** @defgroup CRCEx CRCEx 
   * @brief CRC Extended HAL module driver
   * @{
   */
@@ -99,12 +94,12 @@
 
 /**
   * @brief  Extended initialization to set generating polynomial
-  * @param  hcrc: CRC handle             
+  * @param  hcrc CRC handle             
   * @retval HAL status
   */             
 HAL_StatusTypeDef HAL_CRCEx_Init(CRC_HandleTypeDef *hcrc)
 {
-#if defined(STM32F071xB) || defined(STM32F072xB) || defined(STM32F078xx) || defined(STM32F091xC) || defined (STM32F098xx)    
+#if defined(STM32F071xB) || defined(STM32F072xB) || defined(STM32F078xx) || defined(STM32F091xC) || defined (STM32F098xx)
   /* check whether or not non-default generating polynomial has been 
    * picked up by user */
   assert_param(IS_DEFAULT_POLYNOMIAL(hcrc->Init.DefaultPolynomialUse)); 
@@ -129,8 +124,8 @@ HAL_StatusTypeDef HAL_CRCEx_Init(CRC_HandleTypeDef *hcrc)
 
 /**
   * @brief  Set the Reverse Input data mode.
-  * @param  hcrc: CRC handle
-  * @param  InputReverseMode: Input Data inversion mode
+  * @param  hcrc CRC handle
+  * @param  InputReverseMode Input Data inversion mode
   *         This parameter can be one of the following values:
   *          @arg CRC_INPUTDATA_NOINVERSION: no change in bit order (default value)
   *          @arg CRC_INPUTDATA_INVERSION_BYTE: Byte-wise bit reversal
@@ -157,11 +152,11 @@ HAL_StatusTypeDef HAL_CRCEx_Input_Data_Reverse(CRC_HandleTypeDef *hcrc, uint32_t
 
 /**
   * @brief  Set the Reverse Output data mode.
-  * @param  hcrc: CRC handle
-  * @param  OutputReverseMode: Output Data inversion mode
+  * @param  hcrc CRC handle
+  * @param  OutputReverseMode Output Data inversion mode
   *         This parameter can be one of the following values:
-  *          @arg CRC_OUTPUTDATA_INVERSION_DISABLED: no CRC inversion (default value)
-  *          @arg CRC_OUTPUTDATA_INVERSION_ENABLED: bit-level inversion (e.g for a 8-bit CRC: 0xB5 becomes 0xAD)            
+  *          @arg CRC_OUTPUTDATA_INVERSION_DISABLE: no CRC inversion (default value)
+  *          @arg CRC_OUTPUTDATA_INVERSION_ENABLE: bit-level inversion (e.g for a 8-bit CRC: 0xB5 becomes 0xAD)            
   * @retval HAL status
   */                                   
 HAL_StatusTypeDef HAL_CRCEx_Output_Data_Reverse(CRC_HandleTypeDef *hcrc, uint32_t OutputReverseMode)
@@ -185,12 +180,12 @@ HAL_StatusTypeDef HAL_CRCEx_Output_Data_Reverse(CRC_HandleTypeDef *hcrc, uint32_
 #if defined (STM32F071xB) || defined (STM32F072xB) || defined (STM32F078xx) || defined (STM32F091xC) || defined (STM32F098xx)
 /**
   * @brief  Initializes the CRC polynomial if different from default one.
-  * @param  hcrc: CRC handle
-  * @param  Pol: CRC generating polynomial (7, 8, 16 or 32-bit long)
+  * @param  hcrc CRC handle
+  * @param  Pol CRC generating polynomial (7, 8, 16 or 32-bit long)
   *         This parameter is written in normal representation, e.g.
   *         for a polynomial of degree 7, X^7 + X^6 + X^5 + X^2 + 1 is written 0x65 
   *         for a polynomial of degree 16, X^16 + X^12 + X^5 + 1 is written 0x1021     
-  * @param  PolyLength: CRC polynomial length 
+  * @param  PolyLength CRC polynomial length 
   *         This parameter can be one of the following values:
   *          @arg CRC_POLYLENGTH_7B: 7-bit long CRC (generating polynomial of degree 7)
   *          @arg CRC_POLYLENGTH_8B: 8-bit long CRC (generating polynomial of degree 8)
@@ -200,7 +195,7 @@ HAL_StatusTypeDef HAL_CRCEx_Output_Data_Reverse(CRC_HandleTypeDef *hcrc, uint32_
   */                                   
 HAL_StatusTypeDef HAL_CRCEx_Polynomial_Set(CRC_HandleTypeDef *hcrc, uint32_t Pol, uint32_t PolyLength)
 {
-  uint32_t msb = 31; /* polynomial degree is 32 at most, so msb is initialized to max value */
+  uint32_t msb = 31U; /* polynomial degree is 32 at most, so msb is initialized to max value */
 
   /* Check the parameters */
   assert_param(IS_CRC_POL_LENGTH(PolyLength));
@@ -212,7 +207,7 @@ HAL_StatusTypeDef HAL_CRCEx_Polynomial_Set(CRC_HandleTypeDef *hcrc, uint32_t Pol
    * Look for MSB position: msb will contain the degree of
    *  the second to the largest polynomial member. E.g., for
    *  X^7 + X^6 + X^5 + X^2 + 1, msb = 6. */
-  while (((Pol & (1U << msb)) == 0) && (msb-- > 0))
+  while (((Pol & (1U << msb)) == 0U) && (msb-- > 0U))
   {}
 
   switch (PolyLength)
