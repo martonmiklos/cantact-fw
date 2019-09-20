@@ -10,7 +10,7 @@
   * inserted by the user or by software development tools
   * are owned by their respective copyright owners.
   *
-  * Copyright (c) 2018 STMicroelectronics International N.V. 
+  * Copyright (c) 2019 STMicroelectronics International N.V. 
   * All rights reserved.
   *
   * Redistribution and use in source and binary forms, with or without 
@@ -31,21 +31,14 @@
   *    this license is void and will automatically terminate your rights under 
   *    this license. 
   *
-  * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS" 
-  * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT 
-  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
-  * PARTICULAR PURPOSE AND NON-INFRINGEMENT OF THIRD PARTY INTELLECTUAL PROPERTY
-  * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT 
-  * SHALL STMICROELECTRONICS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-  * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
-  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
-  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  * This software component is licensed by ST under Ultimate Liberty license
+  * SLA0044, the "License"; You may not use this file except in compliance with
+  * the License. You may obtain a copy of the License at:
+  *                             www.st.com/SLA0044
   *
   ******************************************************************************
   */
+/* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_if.h"
@@ -94,8 +87,8 @@ uint8_t slcan_str_index = 0;
 /* USER CODE BEGIN PRIVATE_DEFINES */
 /* Define size for the receive and transmit buffer over CDC */
 /* It's up to user to redefine and/or remove those define */
-#define APP_RX_DATA_SIZE  1000
-#define APP_TX_DATA_SIZE  1000
+#define APP_RX_DATA_SIZE  800
+#define APP_TX_DATA_SIZE  800
 /* USER CODE END PRIVATE_DEFINES */
 
 /**
@@ -213,71 +206,74 @@ static int8_t CDC_DeInit_FS(void)
 static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 {
   /* USER CODE BEGIN 5 */
-	switch (cmd)
-	    {
-	    case CDC_SEND_ENCAPSULATED_COMMAND:
+  switch(cmd)
+  {
+  case CDC_SEND_ENCAPSULATED_COMMAND:
 
-		break;
+	  break;
 
-	    case CDC_GET_ENCAPSULATED_RESPONSE:
+  case CDC_GET_ENCAPSULATED_RESPONSE:
 
-		break;
+	  break;
 
-	    case CDC_SET_COMM_FEATURE:
+  case CDC_SET_COMM_FEATURE:
 
-		break;
+	  break;
 
-	    case CDC_GET_COMM_FEATURE:
+  case CDC_GET_COMM_FEATURE:
 
-		break;
+	  break;
 
-	    case CDC_CLEAR_COMM_FEATURE:
+  case CDC_CLEAR_COMM_FEATURE:
 
-		break;
+	  break;
 
-		/*******************************************************************************/
-		/* Line Coding Structure                                                       */
-		/*-----------------------------------------------------------------------------*/
-		/* Offset | Field       | Size | Value  | Description                          */
-		/* 0      | dwDTERate   |   4  | Number |Data terminal rate, in bits per second*/
-		/* 4      | bCharFormat |   1  | Number | Stop bits                            */
-		/*                                        0 - 1 Stop bit                       */
-		/*                                        1 - 1.5 Stop bits                    */
-		/*                                        2 - 2 Stop bits                      */
-		/* 5      | bParityType |  1   | Number | Parity                               */
-		/*                                        0 - None                             */
-		/*                                        1 - Odd                              */
-		/*                                        2 - Even                             */
-		/*                                        3 - Mark                             */
-		/*                                        4 - Space                            */
-		/* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
-		/*******************************************************************************/
-	    case CDC_SET_LINE_CODING:
+	  /*******************************************************************************/
+	  /* Line Coding Structure                                                       */
+	  /*-----------------------------------------------------------------------------*/
+	  /* Offset | Field       | Size | Value  | Description                          */
+	  /* 0      | dwDTERate   |   4  | Number |Data terminal rate, in bits per second*/
+	  /* 4      | bCharFormat |   1  | Number | Stop bits                            */
+	  /*                                        0 - 1 Stop bit                       */
+	  /*                                        1 - 1.5 Stop bits                    */
+	  /*                                        2 - 2 Stop bits                      */
+	  /* 5      | bParityType |  1   | Number | Parity                               */
+	  /*                                        0 - None                             */
+	  /*                                        1 - Odd                              */
+	  /*                                        2 - Even                             */
+	  /*                                        3 - Mark                             */
+	  /*                                        4 - Space                            */
+	  /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
+	  /*******************************************************************************/
+  case CDC_SET_LINE_CODING:
 
-		break;
+	  break;
 
-	    case CDC_GET_LINE_CODING:
-		pbuf[0] = (uint8_t)(115200);
-		pbuf[1] = (uint8_t)(115200 >> 8);
-		pbuf[2] = (uint8_t)(115200 >> 16);
-		pbuf[3] = (uint8_t)(115200 >> 24);
-		pbuf[4] = 0; // stop bits (1)
-		pbuf[5] = 0; // parity (none)
-		pbuf[6] = 8; // number of bits (8)
-		break;
+  case CDC_GET_LINE_CODING:
+	  pbuf[0] = (uint8_t)(115200);
+	  pbuf[1] = (uint8_t)(115200 >> 8);
+	  pbuf[2] = (uint8_t)(115200 >> 16);
+	  pbuf[3] = (uint8_t)(115200 >> 24);
+	  pbuf[4] = 0; // stop bits (1)
+	  pbuf[5] = 0; // parity (none)
+	  pbuf[6] = 8; // number of bits (8)
+	  break;
 
-	    case CDC_SET_CONTROL_LINE_STATE:
+	  break;
 
-		break;
+  case CDC_SET_CONTROL_LINE_STATE:
 
-	    case CDC_SEND_BREAK:
+	  break;
 
-		break;
+  case CDC_SEND_BREAK:
 
-	    default:
-		break;
-	    }
-	 return (USBD_OK);
+	  break;
+
+  default:
+	  break;
+  }
+
+  return (USBD_OK);
   /* USER CODE END 5 */
 }
 

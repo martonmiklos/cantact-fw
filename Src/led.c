@@ -35,3 +35,8 @@ void led_process(void)
 	}
 }
 
+void set_green_led(bool state)
+{
+	HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, state ? GPIO_PIN_SET : GPIO_PIN_RESET);
+}
+

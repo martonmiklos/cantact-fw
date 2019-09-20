@@ -3,7 +3,7 @@
 #include "led.h"
 
 CAN_HandleTypeDef hcan;
-CAN_FilterConfTypeDef filter;
+CAN_FilterTypeDef filter;
 uint32_t prescaler;
 enum can_bus_state bus_state;
 
@@ -14,7 +14,8 @@ void can_init(void) {
     bus_state = OFF_BUS;
 }
 
-void can_set_filter(uint32_t id, uint32_t mask) {
+void can_set_filter(uint32_t id, uint32_t mask)
+{
     // see page 825 of RM0091 for details on filters
     // set the standard ID part
     filter.FilterIdHigh = (id & 0x7FF) << 5;
@@ -32,43 +33,42 @@ void can_set_filter(uint32_t id, uint32_t mask) {
 
     filter.FilterMode = CAN_FILTERMODE_IDMASK;
     filter.FilterScale = CAN_FILTERSCALE_32BIT;
-    filter.FilterNumber = 0;
-    filter.FilterFIFOAssignment = CAN_FIFO0;
-    filter.BankNumber = 0;
+    filter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
     filter.FilterActivation = ENABLE;
 
     if (bus_state == ON_BUS) {
-	HAL_CAN_ConfigFilter(&hcan, &filter);
+    	HAL_CAN_ConfigFilter(&hcan, &filter);
     }
 }
 
-void can_enable(void) {
-    if (bus_state == OFF_BUS) {
-	hcan.Init.Prescaler = prescaler;
-	hcan.Init.Mode = CAN_MODE_NORMAL;
-	hcan.Init.SJW = CAN_SJW_1TQ;
-	hcan.Init.BS1 = CAN_BS1_4TQ;
-	hcan.Init.BS2 = CAN_BS2_3TQ;
-	hcan.Init.TTCM = DISABLE;
-	hcan.Init.ABOM = DISABLE;
-	hcan.Init.AWUM = DISABLE;
-	hcan.Init.NART = DISABLE;
-	hcan.Init.RFLM = DISABLE;
-	hcan.Init.TXFP = DISABLE;
-        hcan.pTxMsg = NULL;
-        HAL_CAN_Init(&hcan);
-        bus_state = ON_BUS;
-	can_set_filter(0, 0);
-    }
+void can_enable(void)
+{
+	if (bus_state == OFF_BUS) {
+		hcan.Init.Prescaler = prescaler;
+		hcan.Init.Mode = CAN_MODE_NORMAL;
+		hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
+		hcan.Init.TimeSeg1 = CAN_BS1_4TQ;
+		hcan.Init.TimeSeg2 = CAN_BS2_3TQ;
+		hcan.Init.TimeTriggeredMode = DISABLE;
+		hcan.Init.AutoBusOff = DISABLE;
+		hcan.Init.AutoWakeUp = DISABLE;
+		hcan.Init.AutoRetransmission = DISABLE;
+		hcan.Init.ReceiveFifoLocked = DISABLE;
+		hcan.Init.TransmitFifoPriority = DISABLE;
+		HAL_CAN_Init(&hcan);
+		bus_state = ON_BUS;
+		can_set_filter(0, 0);
+	}
 }
 
-void can_disable(void) {
+void can_disable(void)
+{
     if (bus_state == ON_BUS) {
         // do a bxCAN reset (set RESET bit to 1)
         hcan.Instance->MCR |= CAN_MCR_RESET;
         bus_state = OFF_BUS;
     }
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_RESET);
+    set_green_led(false);
 }
 
 void can_set_bitrate(enum can_bitrate bitrate) {
@@ -120,24 +120,25 @@ void can_set_silent(uint8_t silent) {
     }
 }
 
-uint32_t can_tx(CanTxMsgTypeDef *tx_msg, uint32_t timeout) {
-    uint32_t status;
-
-    // transmit can frame
-    hcan.pTxMsg = tx_msg;
-    status = HAL_CAN_Transmit(&hcan, timeout);
+uint32_t can_tx(CAN_TxHeaderTypeDef *tx_msg, uint8_t data[], uint32_t timeout)
+{
+    uint32_t status, transmit_mb = 0xFF;
+    uint32_t started = HAL_GetTick();
+    while (transmit_mb == 0xFF && (HAL_GetTick() - started < timeout)) {
+    	status = HAL_CAN_AddTxMessage(&hcan, tx_msg, data, &transmit_mb);
+    }
 
 	led_on();
     return status;
 }
 
-uint32_t can_rx(CanRxMsgTypeDef *rx_msg, uint32_t timeout) {
-    uint32_t status;
-
-    hcan.pRxMsg = rx_msg;
-
-    status = HAL_CAN_Receive(&hcan, CAN_FIFO0, timeout);
-
+uint32_t can_rx(CAN_RxHeaderTypeDef *rx_msg, uint8_t data[], uint32_t timeout)
+{
+    uint32_t status = HAL_ERROR;
+    uint32_t started = HAL_GetTick();
+	while (status == HAL_ERROR && (HAL_GetTick() - started < timeout)) {
+		status = HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, rx_msg, data);
+	}
 	led_on();
     return status;
 }
@@ -146,5 +147,5 @@ uint8_t is_can_msg_pending(uint8_t fifo) {
     if (bus_state == OFF_BUS) {
         return 0;
     }
-    return (__HAL_CAN_MSG_PENDING(&hcan, fifo) > 0);
+    return (HAL_CAN_GetRxFifoFillLevel(&hcan, fifo) > 0);
 }

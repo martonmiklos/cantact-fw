@@ -5,7 +5,8 @@
 static uint32_t current_filter_id = 0;
 static uint32_t current_filter_mask = 0;
 
-int8_t slcan_parse_frame(uint8_t *buf, CanRxMsgTypeDef *frame) {
+int8_t slcan_parse_frame(uint8_t *buf, CAN_RxHeaderTypeDef *header, uint8_t data[])
+{
     uint8_t i = 0;
     uint8_t id_len, j;
     uint32_t tmp;
@@ -15,21 +16,21 @@ int8_t slcan_parse_frame(uint8_t *buf, CanRxMsgTypeDef *frame) {
     }
 
     // add character for frame type
-    if (frame->RTR == CAN_RTR_DATA) {
+    if (header->RTR == CAN_RTR_DATA) {
         buf[i] = 't';
-    } else if (frame->RTR == CAN_RTR_REMOTE) {
+    } else if (header->RTR == CAN_RTR_REMOTE) {
         buf[i] = 'r';
     }
 
     // assume standard identifier
     id_len = SLCAN_STD_ID_LEN;
-    tmp = frame->StdId;
+    tmp = header->StdId;
     // check if extended
-    if (frame->IDE == CAN_ID_EXT) {
+    if (header->IDE == CAN_ID_EXT) {
         // convert first char to upper case for extended frame
         buf[i] -= 32;
         id_len = SLCAN_EXT_ID_LEN;
-        tmp = frame->ExtId;
+        tmp = header->ExtId;
     }
     i++;
 
@@ -42,12 +43,12 @@ int8_t slcan_parse_frame(uint8_t *buf, CanRxMsgTypeDef *frame) {
     }
 
     // add DLC to buffer
-    buf[i++] = frame->DLC;
+    buf[i++] = header->DLC;
 
     // add data bytes
-    for (j = 0; j < frame->DLC; j++) {
-        buf[i++] = (frame->Data[j] >> 4);
-        buf[i++] = (frame->Data[j] & 0x0F);
+    for (j = 0; j < header->DLC; j++) {
+        buf[i++] = (data[j] >> 4);
+        buf[i++] = (data[j] & 0x0F);
     }
 
     // convert to ASCII (2nd character to end)
@@ -66,8 +67,10 @@ int8_t slcan_parse_frame(uint8_t *buf, CanRxMsgTypeDef *frame) {
     return i;
 }
 
-int8_t slcan_parse_str(uint8_t *buf, uint8_t len) {
-    CanTxMsgTypeDef frame;
+int8_t slcan_parse_str(uint8_t *buf, uint8_t len)
+{
+    CAN_TxHeaderTypeDef header;
+    uint8_t can_data[8];
     uint8_t i;
 
     // convert from ASCII (2nd character to end)
@@ -162,11 +165,11 @@ int8_t slcan_parse_str(uint8_t *buf, uint8_t len) {
 
     } else if (buf[0] == 't' || buf[0] == 'T') {
         // transmit data frame command
-        frame.RTR = CAN_RTR_DATA;
+        header.RTR = CAN_RTR_DATA;
 
     } else if (buf[0] == 'r' || buf[0] == 'R') {
         // transmit remote frame command
-        frame.RTR = CAN_RTR_REMOTE;
+        header.RTR = CAN_RTR_REMOTE;
 
     } else {
         // error, unknown command
@@ -174,47 +177,47 @@ int8_t slcan_parse_str(uint8_t *buf, uint8_t len) {
     }
 
     if (buf[0] == 't' || buf[0] == 'r') {
-        frame.IDE = CAN_ID_STD;
+        header.IDE = CAN_ID_STD;
     } else if (buf[0] == 'T' || buf[0] == 'R') {
-        frame.IDE = CAN_ID_EXT;
+        header.IDE = CAN_ID_EXT;
     } else {
         // error
         return -1;
     }
 
-    frame.StdId = 0;
-    frame.ExtId = 0;
-    if (frame.IDE == CAN_ID_EXT) {
+    header.StdId = 0;
+    header.ExtId = 0;
+    if (header.IDE == CAN_ID_EXT) {
         uint8_t id_len = SLCAN_EXT_ID_LEN;
         i = 1;
         while (i <= id_len) {
-            frame.ExtId *= 16;
-            frame.ExtId += buf[i++];
+            header.ExtId *= 16;
+            header.ExtId += buf[i++];
         }
     }
     else {
         uint8_t id_len = SLCAN_STD_ID_LEN;
         i = 1;
         while (i <= id_len) {
-            frame.StdId *= 16;
-            frame.StdId += buf[i++];
+            header.StdId *= 16;
+            header.StdId += buf[i++];
         }
     }
 
 
-    frame.DLC = buf[i++];
-    if (frame.DLC < 0 || frame.DLC > 8) {
+    header.DLC = buf[i++];
+    if (header.DLC < 0 || header.DLC > 8) {
         return -1;
     }
 
     uint8_t j;
-    for (j = 0; j < frame.DLC; j++) {
-        frame.Data[j] = (buf[i] << 4) + buf[i+1];
+    for (j = 0; j < header.DLC; j++) {
+        can_data[j] = (buf[i] << 4) + buf[i+1];
         i += 2;
     }
 
     // send the message
-    can_tx(&frame, 10);
+    can_tx(&header, can_data, 10);
 
     return 0;
 }
